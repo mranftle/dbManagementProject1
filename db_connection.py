@@ -13,19 +13,28 @@ host address 128.252.167.175 port 5432
 
 '''
 import psycopg2 as pgres
+import pandas as pd
 
 forward_port = 80
 # create database connection
 conn = pgres.connect(database="ranftleoser_project1", \
-                     user="matthew.ranftle", \
-                     # password=PASSWORD, \
+                     # user=USERNAME
+                     #  password=PASSWORD, \
                      host="localhost", \
                      port=forward_port)
 cur = conn.cursor()
 
-sql = "select * from cummulative_happiness"
+# happiness vs number of terrorist attacks
+# sql = "select * from cummulative_happiness"
+# cur.execute(sql)
+# cumm_happiness = pd.DataFrame(cur.fetchall(), columns = ['Country', 'Attacks', 'Happiness Rank', 'Happiness Score'])
+# print cumm_happiness.sort(['Attacks', 'Happiness Rank'], ascending = False)
+# print cumm_happiness[['Attacks', 'Happiness Rank', 'Happiness Score']].corr('pearson')
+
+# attack type vs freedom / trust
+sql = "select * from attack_targets_happiness " \
+      "where targtype1 = 'Government (Diplomatic)'"
 cur.execute(sql)
-res = cur.fetchall()
-
-print res
-
+attack_targ_happiness= pd.DataFrame(cur.fetchall(), columns=['Country', 'Targ Type', 'Attacks', 'Trust', 'Freedom'])
+print attack_targ_happiness[['Attacks','Trust', 'Freedom']].corr('pearson')
+#
