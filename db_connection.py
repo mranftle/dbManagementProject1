@@ -53,7 +53,7 @@ class RunAnalysis:
         sql = "select * from cummulative_happiness"
         cur.execute(sql)
         cumm_happiness = pd.DataFrame(cur.fetchall(), columns = ['Country', 'Attacks', 'Happiness Rank', 'Happiness Score'])
-        print cumm_happiness.sort(['Attacks', 'Happiness Rank'], ascending = False)
+        # print cumm_happiness.sort(['Attacks', 'Happiness Rank'], ascending = False)
         print cumm_happiness[['Attacks', 'Happiness Rank', 'Happiness Score']].corr('pearson')
 
     def feature_selection(self, cur):
@@ -65,6 +65,7 @@ class RunAnalysis:
         happiness = pd.DataFrame(cur.fetchall(), columns=happiness_colnames)
         X = happiness.ix[:, 2:]
         estimator = SVR(kernel="linear")
+
         # vs hrank
         y = happiness['hrank']
         selector = RFE(estimator, n_features_to_select=1, step=1)
@@ -77,13 +78,13 @@ class RunAnalysis:
         selector = selector.fit(X, y)
         attack_feat_ranks = sorted(zip(selector.ranking_, happiness_colnames[2:]))
 
-        print 'features most coorelated with number of terrorist attacks:\n', attack_feat_ranks
+        print 'features most correlated with number of terrorist attacks:\n', attack_feat_ranks
 
         print 'features most correlated with happiness ranking:\n', happ_feat_ranks
 
     def run(self):
         cur = self.open_db_connection()
-        self.feature_selection(cur)
+        self.happiness_vs_attacks(cur)
 
 
 
@@ -97,8 +98,7 @@ def get_configs():
             print(err)
 
 def main():
-    configs = get_configs()
-    ra = RunAnalysis(configs)
+    ra = RunAnalysis(get_configs())
     ra.run()
 
 if __name__ == '__main__':
