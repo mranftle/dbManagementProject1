@@ -17,9 +17,8 @@ import pandas as pd
 import yaml
 import plotly.plotly as py
 import plotly.graph_objs as go
-from sklearn.feature_selection import SelectKBest, RFE
+from sklearn.feature_selection import RFE
 from sklearn.svm import SVR
-from sklearn.feature_selection import chi2
 
 
 class RunAnalysis:
@@ -50,11 +49,65 @@ class RunAnalysis:
     def happiness_vs_attacks(self, cur):
 
         # happiness vs number of terrorist attacks
-        sql = "select * from cummulative_happiness"
+        sql = "select attacks, hrank from cummulative_happiness"
         cur.execute(sql)
-        cumm_happiness = pd.DataFrame(cur.fetchall(), columns = ['Country', 'Attacks', 'Happiness Rank', 'Happiness Score'])
-        # print cumm_happiness.sort(['Attacks', 'Happiness Rank'], ascending = False)
-        print cumm_happiness[['Attacks', 'Happiness Rank', 'Happiness Score']].corr('pearson')
+        cumm_happiness = pd.DataFrame(cur.fetchall(), columns = ['Attacks', 'Hrank'])
+        print cumm_happiness
+        print cumm_happiness.corr('pearson')
+
+    def economy_vs_happiness(self,cur):
+        sql = "select hrank, economy from happiness;"
+        cur.execute(sql)
+        econ_happ = pd.DataFrame(cur.fetchall(), columns=['Hrank', 'Economy'])
+        print econ_happ.corr('pearson')
+
+    def plot_attack_feature_correlations(self,cur):
+        sql = "SELECT c.attacks, h.hrank, h.economy, h.family, h.health, h.freedom, h.trust, h.generosity, h.dys_residual FROM happiness as h " \
+              "INNER JOIN cummulative AS c ON h.country = c.country;"
+
+        cur.execute(sql)
+        happiness_colnames = [desc[0] for desc in cur.description]
+        happiness = pd.DataFrame(cur.fetchall(), columns=happiness_colnames)
+        attacks = happiness.ix[:,1] # 0 for attacks, 1 for hrank
+        feats = happiness.ix[:, 2:]
+
+        x = []
+        y = []
+        for col in feats:
+            pear_co = pd.DataFrame({'attacks':attacks, col: feats[col]}).corr('pearson')
+            x.append(pear_co.columns[1])
+            y.append(pear_co['attacks'][1])
+
+        d = [l[0] for l in sorted(zip(x,y), key=lambda j:abs(j[1]),reverse=True)]
+
+        # plot using plotly, uncomment to plot
+        # data = [go.Bar(
+        #     x=x,
+        #     y=y
+        # )]
+        # layout = go.Layout(
+        #     title='Correlation to Happiness Rank vs Happiness Features',
+        #     xaxis=dict(
+        #         title='Features',
+        #         titlefont=dict(
+        #             family='Courier New, monospace',
+        #             size=18,
+        #             color='#7f7f7f'
+        #         )
+        #     ),
+        #     yaxis=dict(
+        #         title='Correlation to Happiness Rank',
+        #         titlefont=dict(
+        #             family='Courier New, monospace',
+        #             size=18,
+        #             color='#7f7f7f'
+        #         )
+        #     )
+        # )
+        #
+        # fig = go.Figure(data=data, layout=layout)
+        # py.sign_in('Mranftle', 'MikQahEQpuPow1Dd5XxZ')
+        # py.iplot(fig, filename='happiness_features')
 
     def feature_selection(self, cur):
         # rank features of happiness compared to happiness rank and number of terrorist attacks
@@ -84,9 +137,11 @@ class RunAnalysis:
 
     def run(self):
         cur = self.open_db_connection()
-        self.happiness_vs_attacks(cur)
-
-
+        # self.attack_type(cur)
+        # self.happiness_vs_attacks(cur)
+        # self.feature_selection(cur)
+        # self.economy_vs_happiness(cur)
+        self.plot_attack_feature_correlations(cur)
 
 def get_configs():
     """parse db configs from yaml
@@ -104,10 +159,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-# # make plot of eigen values using plotly api
-# trace = go.Scatter(x=range(len(happiness_pca.explained_variance_)), y=happiness_pca.explained_variance_)
-# graph_points =[trace]
-# py.sign_in('Mranftle', 'MikQahEQpuPow1Dd5XxZ')
-# py.iplot(graph_points, filename='happiness_eigenvalues')
 
-# print happiness
