@@ -137,10 +137,10 @@ class RunAnalysis:
 
     def run(self):
         cur = self.open_db_connection()
-        # self.attack_type(cur)
-        # self.happiness_vs_attacks(cur)
-        # self.feature_selection(cur)
-        # self.economy_vs_happiness(cur)
+        self.attack_type(cur)
+        self.happiness_vs_attacks(cur)
+        self.feature_selection(cur)
+        self.economy_vs_happiness(cur)
         self.plot_attack_feature_correlations(cur)
 
 def get_configs():
